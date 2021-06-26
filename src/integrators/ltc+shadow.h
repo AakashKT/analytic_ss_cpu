@@ -34,9 +34,9 @@ class LTCShadow : public SamplerIntegrator {
 	Float projectXY(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &edges, Vector3f lookAt, bool deltaCorrection = false) const;
 	void sortVertices(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &edges, Vector3f cg) const;
 
-	std::vector<Vector3f> computeFarPlaneCorners(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> edges, Float radius, Vector3f cg) const;
+	std::vector<Vector3f> computeFarPlaneCorners(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> edges, Float radius) const;
 	bool isVisible(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &lightEdges, Float lightRadius, Vector3f lightsAvgNormal, 
-					std::vector<std::pair<Vector3f, Vector3f>> &blockerEdges, Float blockerRadius) const;
+					std::vector<Vector3f> corners, std::vector<std::pair<Vector3f, Vector3f>> &blockerEdges, Float blockerRadius) const;
 	void clipToHorizon(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &edges) const;
 	
 	Vector3f applyLocalTransform(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &edges, Vector3f &avgNormal, Vector3f cg) const;

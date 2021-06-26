@@ -184,7 +184,7 @@ TriangleMesh::TriangleMesh(
         Vector3f temp = this->uniqueVertices[i] - this->cg;
         this->sphereRadius = std::max(this->sphereRadius, temp.Length());
     }
-    // this->sphereRadius += 1.0;
+    // this->sphereRadius += this->sphereRadius * 0.5;
 
     // std::cout << this->cg << std::endl;
     // std::cout << "-------" << std::endl;
@@ -290,8 +290,7 @@ TriangleMesh::TriangleMesh(
     // }
 }
 
-std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::getTriangle(Point3f sp, Vector3f &avgNormal, Vector3f &gcg, int idx) {
-    Vector3f shadingPoint = Vector3f(sp);
+std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::getTriangle(Vector3f &sp, Vector3f &avgNormal, Vector3f &gcg, int idx) {
     std::vector< std::pair<Vector3f, Vector3f> > edges;
     avgNormal = Normalize( Vector3f(this->faceNormals[idx]) );
 
@@ -300,35 +299,34 @@ std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::getTriangle(Point3f s
     Vector3f v3 = Vector3f(this->uniqueVertices[ this->uniqueFaceIndices[idx][2] ]);
 
     gcg = (v1+v2+v3) / 3.0;
-    gcg = gcg - shadingPoint;
+    gcg = gcg - sp;
+
+    float area = Cross(v2-v1, v3-v1).Length();
+    float alpha = Cross(v2-sp, v3-sp).Length() / area;
+    float beta = Cross(v3-sp, v1-sp).Length() / area;
+    float gamma = 1 - alpha - beta;
 
     Float cnd = Dot(-Normalize(gcg), avgNormal); 
+    if(cnd == 0.f)
+        if(alpha >= 0 && alpha <= 1 && beta >= 0 && beta <= 1 && gamma >= 0 && gamma <=1 && (alpha+beta+gamma) == 1)
+            return edges;
+
     if(cnd >= 0) {
-        edges.push_back(std::pair<Vector3f, Vector3f>(v1-shadingPoint, v2-shadingPoint));
-        edges.push_back(std::pair<Vector3f, Vector3f>(v2-shadingPoint, v3-shadingPoint));
-        edges.push_back(std::pair<Vector3f, Vector3f>(v3-shadingPoint, v1-shadingPoint));
-
-        // Vector3f rand1(rand()/Float(RAND_MAX), rand()/Float(RAND_MAX), rand()/Float(RAND_MAX));
-        // rand1 *= 1e-2;
-        // Vector3f rand2(rand()/Float(RAND_MAX), rand()/Float(RAND_MAX), rand()/Float(RAND_MAX));
-        // rand2 *= 1e-2;
-        // Vector3f rand3(rand()/Float(RAND_MAX), rand()/Float(RAND_MAX), rand()/Float(RAND_MAX));
-        // rand3 *= 1e-2;
-
-        // edges.push_back(std::pair<Vector3f, Vector3f>(v1-shadingPoint+rand1, v2-shadingPoint+rand1));
-        // edges.push_back(std::pair<Vector3f, Vector3f>(v2-shadingPoint+rand2, v3-shadingPoint+rand2));
-        // edges.push_back(std::pair<Vector3f, Vector3f>(v3-shadingPoint+rand3, v1-shadingPoint+rand3));
+        edges.push_back(std::pair<Vector3f, Vector3f>(v1-sp, v2-sp));
+        edges.push_back(std::pair<Vector3f, Vector3f>(v2-sp, v3-sp));
+        edges.push_back(std::pair<Vector3f, Vector3f>(v3-sp, v1-sp));
     }
 
     return edges;
 }
 
-std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::computeSilhouetteEdges(Point3f sp, Vector3f &avgNormal) {
+std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::computeSilhouetteEdges(Vector3f shadingPoint, Vector3f &avgNormal) {
+    ProfilePhase p(Prof::SilhouetteComputation);
+    
     std::vector< std::pair<Vector3f, Vector3f> > edges;
     avgNormal = Vector3f(0.f, 0.f, 0.f);
 
     int eidx = 0;
-    Vector3f shadingPoint = Vector3f(sp);
     for(auto edge : this->edgeIndices) {
         std::pair<Vector3f, Vector3f> sil;
 
@@ -339,7 +337,7 @@ std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::computeSilhouetteEdge
         if(edge[2] == -1) {
             Normal3f fn = this->faceNormals[ edge[3] ];
             Vector3f view = Vector3f(shadingPoint - cg);
-            view = view / view.Length();
+            view = Normalize(view);
 
             Float cnd = Dot(view, fn); 
             if(cnd >= 0) {
@@ -353,7 +351,7 @@ std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::computeSilhouetteEdge
         else if(edge[3] == -1) {
             Normal3f fn = this->faceNormals[ edge[2] ];
             Vector3f view = Vector3f(shadingPoint - cg);
-            view = view / view.Length();
+            view = Normalize(view);
 
             Float cnd = Dot(view, fn); 
             if(cnd >= 0) {
@@ -369,7 +367,7 @@ std::vector< std::pair<Vector3f, Vector3f> > TriangleMesh::computeSilhouetteEdge
             Normal3f fn2 = this->faceNormals[ edge[3] ];
 
             Vector3f view = Vector3f(shadingPoint - cg);
-            view = view / view.Length();
+            view = Normalize(view);
 
             Float cnd1 = Dot(view, fn1); 
             Float cnd2 = Dot(view, fn2); 

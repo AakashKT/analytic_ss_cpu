@@ -57,8 +57,8 @@ struct TriangleMesh {
                  const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
                  const int *faceIndices);
     
-    std::vector< std::pair<Vector3f, Vector3f> > computeSilhouetteEdges(Point3f sp, Vector3f &avgNormal);
-    std::vector< std::pair<Vector3f, Vector3f> > getTriangle(Point3f sp, Vector3f &avgNormal, Vector3f &gcg, int idx);
+    std::vector< std::pair<Vector3f, Vector3f> > computeSilhouetteEdges(Vector3f shadingPoint, Vector3f &avgNormal);
+    std::vector< std::pair<Vector3f, Vector3f> > getTriangle(Vector3f &sp, Vector3f &avgNormal, Vector3f &gcg, int idx);
 
     // TriangleMesh Data
     const int nTriangles, nVertices;

@@ -383,6 +383,7 @@ Float LTCShadow::projectXY(SurfaceInteraction &si, std::vector<std::pair<Vector3
 		edges[i].first.y /= edges[i].first.z;
 		edges[i].first.x *= ( randomScale * 1e-2 + 1.0);
 		edges[i].first.y *= ( randomScale * 1e-2 + 1.0);
+		// edges[i].first.z *= ( randomScale * 1e-3 + 1.0);
 
 		if(deltaCorrection)
 			edges[i].second.z += std::abs(delta) + 1.f;
@@ -392,6 +393,7 @@ Float LTCShadow::projectXY(SurfaceInteraction &si, std::vector<std::pair<Vector3
 		edges[i].second.y /= edges[i].second.z;
 		edges[i].second.x *= ( randomScale * 1e-2 + 1.0);
 		edges[i].second.y *= ( randomScale * 1e-2 + 1.0);
+		// edges[i].second.z *= ( randomScale * 1e-3 + 1.0);
 	}
 
 	return delta;
@@ -488,7 +490,7 @@ void LTCShadow::sortVertices(SurfaceInteraction &si, std::vector<std::pair<Vecto
 }
 
 bool LTCShadow::isVisible(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> &lightEdges, Float lightRadius, Vector3f lightsAvgNormal, 
-										std::vector<std::pair<Vector3f, Vector3f>> &blockerEdges, Float blockerRadius) const {
+										std::vector<Vector3f> corners, std::vector<std::pair<Vector3f, Vector3f>> &blockerEdges, Float blockerRadius) const {
 	Vector3f lcg(0.f, 0.f, 0.f);
 	for(auto edge : lightEdges) {
 		lcg += edge.first;
@@ -502,7 +504,6 @@ bool LTCShadow::isVisible(SurfaceInteraction &si, std::vector<std::pair<Vector3f
 	}
 	bcg /= (Float) blockerEdges.size();
 
-	auto corners = computeFarPlaneCorners(si, lightEdges, lightRadius, -lcg);
 	Vector3f tr = corners[0];
 	Vector3f tl = corners[1];
 	Vector3f bl = corners[2];
@@ -523,7 +524,7 @@ bool LTCShadow::isVisible(SurfaceInteraction &si, std::vector<std::pair<Vector3f
 	if(farPlane) {
 		temp = Dot(bcg, topPlaneNormal);
 		bool topPlane = ( temp > 0 || (temp <= 0 && std::abs(temp) <= blockerRadius) ) ? true : false;
-		return true;
+		// return true;
 		if(topPlane) {
 			temp = Dot(bcg, bottomPlaneNormal);
 			bool bottomPlane = ( temp > 0 || (temp <= 0 && std::abs(temp) <= blockerRadius) ) ? true : false;
@@ -544,19 +545,17 @@ bool LTCShadow::isVisible(SurfaceInteraction &si, std::vector<std::pair<Vector3f
 	}
 
 	return false;
-
-	// bool topPlane = ( Dot(bcg, topPlaneNormal) >= 0 || Dot(bcg, topPlaneNormal) < blockerRadius ) ? true : false;
-	// bool bottomPlane = ( Dot(bcg, bottomPlaneNormal) >= 0 || Dot(bcg, bottomPlaneNormal) < blockerRadius ) ? true : false;
-	// bool rightPlane = ( Dot(bcg, rightPlaneNormal) >= 0 || Dot(bcg, rightPlaneNormal) < blockerRadius ) ? true : false;
-	// bool leftPlane = ( Dot(bcg, leftPlaneNormal) >= 0 || Dot(bcg, leftPlaneNormal) < blockerRadius ) ? true : false;
-
-	// return farPlane;
-	// return farPlane && topPlane && bottomPlane && rightPlane && leftPlane;
 }
 
-std::vector<Vector3f> LTCShadow::computeFarPlaneCorners(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> edges, Float radius, Vector3f cg) const {
+std::vector<Vector3f> LTCShadow::computeFarPlaneCorners(SurfaceInteraction &si, std::vector<std::pair<Vector3f, Vector3f>> edges, Float radius) const {
 	// Returns Top right, Top Left, Bottom left, Bottom Right
 	std::vector<Vector3f> corners(4);
+
+	Vector3f cg(0.f, 0.f, 0.f);
+	for(auto edge : edges) {
+		cg += edge.first;
+	}
+	cg /= (Float) edges.size();
 
 	Vector3f N(0.f, 0.f, 1.f);
 	Vector3f L(cg);
@@ -575,60 +574,14 @@ std::vector<Vector3f> LTCShadow::computeFarPlaneCorners(SurfaceInteraction &si, 
 	corners[3] = cg - radius * Ud + radius * S;
 
 	return corners;
-
-	// Vector3f cg(0.f, 0.f, 0.f);
-	// for(auto edge : edges) {
-	// 	cg += edge.first;
-	// }
-	// cg /= (Float) edges.size();
-
-	// // Camera look at toward CG ; Forward transform
-	// Float delta = this->projectXY(si, edges, cg, true);
-
-	// Float maxx, maxy, minx, miny, maxz, minz;
-	// for(int i=0; i<edges.size(); i++) {
-	// 	if(i == 0) {
-	// 		maxx = edges[i].first.x;
-	// 		maxy = edges[i].first.y;
-	// 		maxz = edges[i].first.z;
-	// 		minx = edges[i].first.x;
-	// 		miny = edges[i].first.y; 
-	// 		minz = edges[i].first.z; 
-	// 	}
-	// 	else {
-	// 		maxx = std::max(maxx, edges[i].first.x);
-	// 		maxy = std::max(maxy, edges[i].first.y);
-	// 		maxz = std::max(maxz, edges[i].first.z);
-	// 		minx = std::min(minx, edges[i].first.x);
-	// 		miny = std::min(miny, edges[i].first.y);
-	// 		minz = std::min(minz, edges[i].first.z);
-	// 	}
-	// }
-
-	// std::vector<std::pair<Vector3f, Vector3f>> tempCorners;
-	// tempCorners.push_back(std::pair<Vector3f, Vector3f>(Vector3f(maxx, maxy, minz), Vector3f(maxx, maxy, minz)));
-	// tempCorners.push_back(std::pair<Vector3f, Vector3f>(Vector3f(minx, maxy, minz), Vector3f(minx, maxy, minz)));
-	// tempCorners.push_back(std::pair<Vector3f, Vector3f>(Vector3f(minx, miny, minz), Vector3f(minx, miny, minz)));
-	// tempCorners.push_back(std::pair<Vector3f, Vector3f>(Vector3f(maxx, miny, minz), Vector3f(maxx, miny, minz)));
-
-	// // Inverse Transform
-	// this->unprojectXY(si, tempCorners, cg, true, delta);
-
-	// corners[0] = tempCorners[0].first;
-	// corners[1] = tempCorners[1].first;
-	// corners[2] = tempCorners[2].first;
-	// corners[3] = tempCorners[3].first;
-
-	// return corners;
 }
 
 Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, std::ofstream &logFile, int depth) const {
-
-	///* LOG */
-	// logFile << "P " << std::to_string(sampler.currentPixel.x) << " " << std::to_string(sampler.currentPixel.y) << std::endl;
-	// std::cout << "P " << std::to_string(sampler.currentPixel.x) << " " << std::to_string(sampler.currentPixel.y) << std::endl;
-	///* ENDLOG */
+	
+	// // LOG
+	// logFile << std::to_string(sampler.currentPixel.x) << "," << std::to_string(sampler.currentPixel.y) << ",";
+	// // ENDLOG
 				
 	ProfilePhase p(Prof::SamplerIntegratorLi);
 	Spectrum L(0.0);
@@ -637,14 +590,10 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 	bool foundIntersection = scene.Intersect(ray, &isect);
 	
 	if(!foundIntersection) {
-		// LOG		
-		// logFile << "0" << std::endl;
-		// logFile << "0" << std::endl;
-		// logFile << "0" << std::endl;
-		// logFile << "0" << std::endl;
-		// logFile << "0" << std::endl;
-		// logFile << "0" << std::endl;
-		// ENDLOG
+		// // LOG		
+		// logFile << "0,";
+		// logFile << "0,";
+		// // ENDLOG
 	}
 	else if(foundIntersection) {
 		Spectrum lightRadiance = isect.Le(-ray.d);
@@ -656,14 +605,10 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 		if(lightRadiance.y() != 0.0f || isectMesh->isLight) {
 			L += lightRadiance;
 
-			// LOG		
-			// logFile << "0" << std::endl;
-			// logFile << "0" << std::endl;
-			// logFile << "0" << std::endl;
-			// logFile << "0" << std::endl;
-			// logFile << "0" << std::endl;
-			// logFile << "0" << std::endl;
-			// ENDLOG
+			// // LOG		
+			// logFile << "0,";
+			// logFile << "0,";
+			// // ENDLOG
 		}
 		else {
 			/* Initialize */
@@ -671,33 +616,32 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 
 			float alpha = 0.f;
 			auto diffuse = isect.getParams(isect, &alpha);
-			// alpha = alpha*alpha;
 
 			Spectrum irradiance(0.0);
 			int idx = 0;
 			Float amplitude = 0.f;
+			auto shadingPoint = Vector3f(isect.p);
+			shadingPoint = shadingPoint + 1e-3 * Vector3f(isect.n);
 
 			/* Find and store light source silhouettes
 					Also sort the individual vertices in continus manner.
 					Project to unit sphere and clip to horizon. */
-			std::vector< std::vector<std::pair<Vector3f, Vector3f>> > lightsEdges, lightsEdgesGlobal;
+			std::vector< std::vector<std::pair<Vector3f, Vector3f>> > lightsEdges, lightsEdgesGlobal, lightsEdgesSph;
 			std::vector<Vector3f> lightsAvgNormal, lightsGlobalCg;
 			std::vector<Spectrum> lightsEmit;
 			std::vector<Float> lightsRadii;
-			
-			// LOG
-			// std::vector< std::vector<std::pair<Vector3f, Vector3f>> > nonClipped, clipped;
-			// LOG
+			std::vector< std::vector<Vector3f> > lightsCorners;
 
 			int numLights = scene.areaLightMeshes.size();
+
 			for (int j=0; j < numLights; ++j) {
 				const std::shared_ptr<TriangleMesh> &lightMesh = scene.areaLightMeshes[j];
 
-				int numIndices = lightMesh->uniqueFaceIndices.size(); // Triangle mesh
+				int numIndices = lightMesh->uniqueFaceIndices.size();
 				for(int k=0; k<numIndices; k++) {
 					Vector3f gcg;
 					Vector3f avgNormal(0.f, 0.f, 0.f);
-					auto silhouetteEdges = lightMesh->getTriangle(isect.p, avgNormal, gcg, k);
+					auto silhouetteEdges = lightMesh->getTriangle(shadingPoint, avgNormal, gcg, k);
 
 					if(Dot(-gcg, avgNormal) < 0)
 						continue;
@@ -706,129 +650,131 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 					auto globalEdges = silhouetteEdges;
 					this->sortVertices(isect, silhouetteEdges, cg);
 					this->projectToUnitSphere(silhouetteEdges);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp1(silhouetteEdges); //LOG
 					this->clipToHorizon(isect, silhouetteEdges);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp2(silhouetteEdges); //LOG
+					auto sphEdges = silhouetteEdges;
 					this->projectXY(isect, silhouetteEdges, projectionVector);
 
 					if(silhouetteEdges.size() != 0) {
+						auto corners = computeFarPlaneCorners(isect, globalEdges, lightMesh->sphereRadius);
+						lightsCorners.push_back(corners);
+
 						lightsAvgNormal.push_back(avgNormal);
 						lightsEdgesGlobal.push_back(globalEdges);
+						lightsEdgesSph.push_back(sphEdges);
 						lightsEdges.push_back(silhouetteEdges);
 						lightsEmit.push_back(scene.areaLightRadiance[j]);
 						lightsGlobalCg.push_back(gcg);
-
 						lightsRadii.push_back(lightMesh->sphereRadius);
-						
-						// LOG
-						// occNonClipped.push_back(temp1);
-						// occClipped.push_back(temp2);
-						// LOG
 					}
 				}
 			}
 
-
-			// for (int j=0; j < numLights; ++j) {
-			// 	const std::shared_ptr<TriangleMesh> &lightMesh = scene.areaLightMeshes[j];
-			// 	Vector3f avgNormal(0.f, 0.f, 0.f);
-			// 	auto silhouetteEdges = lightMesh->computeSilhouetteEdges(isect.p, avgNormal);
-			// 	auto gcg = lightMesh->cg - Vector3f(isect.p);
-
-			// 	auto cg = this->applyLocalTransform(isect, silhouetteEdges, avgNormal, gcg);
-			// 	auto globalEdges = silhouetteEdges;
-			// 	this->sortVertices(isect, silhouetteEdges, cg);
-			// 	this->projectToUnitSphere(silhouetteEdges);
-			// 	// std::vector<std::pair<Vector3f, Vector3f>> temp1(silhouetteEdges); //LOG
-			// 	this->clipToHorizon(isect, silhouetteEdges);
-			// 	// std::vector<std::pair<Vector3f, Vector3f>> temp2(silhouetteEdges); //LOG
-			// 	this->projectXY(isect, silhouetteEdges, projectionVector);
-
-			// 	if(silhouetteEdges.size() != 0) {
-			// 		lightsAvgNormal.push_back(avgNormal);
-			// 		lightsEdgesGlobal.push_back(globalEdges);
-			// 		lightsEdges.push_back(silhouetteEdges);
-			// 		lightsEmit.push_back(scene.areaLightRadiance[j]);
-			// 		lightsGlobalCg.push_back(gcg);
-
-			// 		lightsRadii.push_back(lightMesh->sphereRadius);
-
-			// 		// LOG
-			// 		// nonClipped.push_back(temp1);
-			// 		// clipped.push_back(temp2);
-			// 		// LOG
-			// 	}
-			// }
-
-			/* Find and store blocker (occluder) silhouettes
-					Also sort the individual vertices in continus manner.
-					Project to unit sphere and clip to horizon. */
-			std::vector< std::vector<std::pair<Vector3f, Vector3f>> > blockersEdges, blockersEdgesGlobal;
-			std::vector<Vector3f> blockersAvgNormal, blockersGlobalCg;
-			std::vector<Float> blockersRadii;
-
-			// LOG
-			// std::vector< std::vector<std::pair<Vector3f, Vector3f>> > occNonClipped, occClipped;
-			// LOG
+			std::vector< std::vector<std::pair<Vector3f, Vector3f>> > blockersEdges_, blockersEdgesGlobal_, blockersEdgesSph_;
+			std::vector<int> blockerMeshIndices;
+			std::vector<Vector3f> blockersAvgNormal_;
 
 			int numBlockers = scene.blockerMeshes.size();
-			for (int j=0; j < numBlockers; ++j) {
-				const std::shared_ptr<TriangleMesh> &blockerMesh = scene.blockerMeshes[j];
+			{
+				ProfilePhase occluderPreprocess(Prof::OccluderPreprocess);
 
-				// if(isectMesh->cg == blockerMesh->cg || !blockerMesh->isOccluder) {
-				// 	continue;
-				// }
+				for (int j=0; j < numBlockers; ++j) {
+					const std::shared_ptr<TriangleMesh> &blockerMesh = scene.blockerMeshes[j];
 
-				int numIndices = blockerMesh->uniqueFaceIndices.size(); // Triangle mesh
-				for(int k=0; k<numIndices; k++) {
-					Vector3f gcg;
-					Vector3f avgNormal(0.f, 0.f, 0.f);
-					auto silhouetteEdges = blockerMesh->getTriangle(isect.p, avgNormal, gcg, k);
+					int numIndices = blockerMesh->uniqueFaceIndices.size();
+					for(int k=0; k<numIndices; k++) {
+						Vector3f gcg;
+						Vector3f avgNormal(0.f, 0.f, 0.f);
+						auto silhouetteEdges = blockerMesh->getTriangle(shadingPoint, avgNormal, gcg, k);
 
-					auto cg = this->applyLocalTransform(isect, silhouetteEdges, avgNormal, gcg);
-					auto globalEdges = silhouetteEdges;
-					this->sortVertices(isect, silhouetteEdges, cg);
-					this->projectToUnitSphere(silhouetteEdges);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp1(silhouetteEdges); //LOG
-					this->clipToHorizon(isect, silhouetteEdges);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp2(silhouetteEdges); //LOG
-					this->projectXY(isect, silhouetteEdges, projectionVector);
+						if(Dot(-gcg, avgNormal) < 0)
+							continue;
 
-					if(silhouetteEdges.size() != 0) {
-						blockersAvgNormal.push_back(avgNormal);
-						blockersEdgesGlobal.push_back(globalEdges);
-						blockersEdges.push_back(silhouetteEdges);
-						blockersGlobalCg.push_back(gcg);
+						auto cg = this->applyLocalTransform(isect, silhouetteEdges, avgNormal, gcg);
+						auto globalEdges = silhouetteEdges;
+						this->sortVertices(isect, silhouetteEdges, cg);
+						this->projectToUnitSphere(silhouetteEdges);
+						this->clipToHorizon(isect, silhouetteEdges);
+						auto sphEdges = silhouetteEdges;
+						this->projectXY(isect, silhouetteEdges, projectionVector);
 
-						blockersRadii.push_back(blockerMesh->sphereRadius);
-						
-						// LOG
-						// occNonClipped.push_back(temp1);
-						// occClipped.push_back(temp2);
-						// LOG
+						if(silhouetteEdges.size() != 0) {
+							blockersEdgesGlobal_.push_back(globalEdges);
+							blockersAvgNormal_.push_back(avgNormal);
+							blockersEdges_.push_back(silhouetteEdges);
+							blockersEdgesSph_.push_back(sphEdges);
+
+							blockerMeshIndices.push_back(j);
+						}
 					}
 				}
 			}
 
-			if(lightsEdges.size() == 0) {
-				// LOG		
-				// logFile << "0" << std::endl;
-				// logFile << "0" << std::endl;
-				// logFile << "0" << std::endl;
-				// logFile << "0" << std::endl;
-				// logFile << "0" << std::endl;
-				// logFile << "0" << std::endl;
-				// ENDLOG
-			
-				return L;
-			}
-
-			// LOG
-			// std::vector< std::vector<std::pair<Vector3f, Vector3f>> > ghClip, ghClipLtc;
-			// LOG
+			// // LOG
+			// logFile << std::to_string(lightsEdges.size()) << ",";
+			// // ENDLOG
 
 			int lidx = 0;
 			for(auto light : lightsEdges) {
+
+				std::vector< std::vector<std::pair<Vector3f, Vector3f>> > blockersEdges, blockersEdgesGlobal, blockersEdgesSph;
+				std::vector<Vector3f> blockersAvgNormal;
+				std::vector< std::vector<PolyClip::Point2d> > blockersPolygons;
+
+				int numBlockers = blockersEdges_.size();
+				{
+					ProfilePhase frustumCull(Prof::FrustumCull);
+
+					for (int j=0; j < numBlockers; ++j) {
+						const std::shared_ptr<TriangleMesh> &blockerMesh = scene.blockerMeshes[ blockerMeshIndices[j] ];
+
+						if(!this->isVisible(isect, lightsEdgesGlobal[lidx], lightsRadii[lidx], lightsAvgNormal[lidx], lightsCorners[lidx],
+														blockersEdgesGlobal_[j], blockerMesh->sphereRadius)) {
+							continue;
+						}
+
+						auto avgNormal = blockersAvgNormal_[j];
+						auto silhouetteEdges = blockersEdges_[j];
+
+						blockersAvgNormal.push_back(avgNormal);
+						blockersEdges.push_back(silhouetteEdges);
+						blockersEdgesSph.push_back(blockersEdgesSph_[j]);
+						blockersEdgesGlobal.push_back(blockersEdgesGlobal_[j]);
+					}
+				}
+
+				// // LOG: Horizon clipped edges of light (First plot spherical co-ords and then projected edges)
+				// logFile << std::to_string(light.size()) << ",";
+
+				// for(auto item : lightsEdgesSph[lidx]) {
+				// 	auto temp = Normalize(item.first);
+				// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+				// }
+
+				// for(auto item : light) {
+				// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+				// }
+				// // ENDLOG
+
+				// // LOG: Horizon clipped edges of occluders
+				// logFile << std::to_string(blockersEdges.size()) << ",";
+				// int counter = 0;
+				// for(auto blocker : blockersEdges) {
+				// 	// Fist plot spherical co-ords and then projected edges
+				// 	logFile << std::to_string(blocker.size()) << ",";
+
+				// 	for(auto vertex : blockersEdgesSph[counter]) {
+				// 		auto temp = Normalize(vertex.first);
+				// 		logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+				// 	}
+
+				// 	for(auto vertex : blocker) {
+				// 		logFile << std::to_string(vertex.first.x) << "," << std::to_string(vertex.first.y) << "," << std::to_string(vertex.first.z) << ",";
+				// 	}
+
+				// 	counter++;
+				// }
+				// // ENDLOG
+
 				Spectrum currentIrradiance(0.f);
 
 				std::vector<std::pair<Vector3f, Vector3f>> currentLight(light);
@@ -838,27 +784,30 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 					/* Compute unoccluded radiance */
 					std::vector<std::pair<Vector3f, Vector3f>> currentLight_(currentLight);
 
+					// // LOG
+					// logFile << "1,";
+					// logFile << std::to_string(currentLight_.size()) << ",";
+					// for(auto vertex : currentLight_) {
+					// 	auto temp = Normalize(vertex.first);
+					// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+					// }
+					// for(auto item : currentLight_) {
+					// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+					// }
+					// // ENDLOG
+
 					this->unprojectXY(isect, currentLight_, projectionVector);
 					this->projectToUnitSphere(currentLight_);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp1(currentLight_); // LOG
 					this->applyLTC(isect, currentLight_, alpha, &amplitude);
 					this->projectToUnitSphere(currentLight_);
 					this->clipToHorizon(isect, currentLight_);
 					this->projectToUnitSphere(currentLight_);
-					// std::vector<std::pair<Vector3f, Vector3f>> temp2(currentLight_); // LOG
 
 					currentIrradiance += lightsEmit[lidx] * amplitude * integrateEdges(currentLight_);
-
-					// LOG
-					// ghClip.push_back(temp1);
-					// ghClipLtc.push_back(temp2);
-					// LOG
 				}
-				else if(blockersEdges.size() != 0) {
+				else if(blockersEdges.size() != 0) {					
 					/* Create current light source polygon */
 					std::vector<PolyClip::Point2d> currentLightVertices;
-					
-					// float randomScale = ( rand()/Float(RAND_MAX/2.0) - 1 ) * 1e-2 + 1.0;
 					for(auto vertex : currentLight) {
 						auto ver = PolyClip::Point2d(vertex.first.x, vertex.first.y);
 						currentLightVertices.push_back(ver);
@@ -868,14 +817,8 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 					std::vector< std::vector<PolyClip::Point2d> > blockersPolygons;
 					idx = 0;
 					for(auto blocker : blockersEdges) {
-
-						if(!this->isVisible(isect, lightsEdgesGlobal[lidx], lightsRadii[lidx], lightsAvgNormal[lidx], blockersEdgesGlobal[idx], blockersRadii[idx])) {
-							idx++;
-							continue;
-						}
 						
 						std::vector<PolyClip::Point2d> blockerVertices;
-						// float randomScale = ( rand()/Float(RAND_MAX/2.0) - 1 ) * 1e-2 + 1.0;
 						for(auto vertex : blocker) {
 							auto ver = PolyClip::Point2d(vertex.first.x, vertex.first.y);							
 							blockerVertices.push_back(ver);
@@ -886,190 +829,142 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 					}
 
 					if(blockersPolygons.size() != 0) {
-						/* Union of occluder polygons */
-						DLL *unionFirst = new DLL();
-						DLL *unionLast = unionFirst;
 						
-						DLL *current = unionFirst;
-						for(int i=0; i<blockersPolygons.size(); i++) {
-							current->polygon = blockersPolygons[i];
-							current->marker = true;
+						DLL *current, *unionFirst, *unionLast, *firstElem, *lastElem;
+						
+						{
+							ProfilePhase finalLTC(Prof::SetDifference);
 							
-							DLL *newElem = new DLL();
-							newElem->prev = current;
+							/* Union of occluder polygons */
+							unionFirst = new DLL();
+							unionLast = unionFirst;
 							
-							current->next = newElem;
-							current = newElem;
-						}
-						unionLast = current;
-
-						// DLL *current1 = unionFirst;
-						// while(true) {
-						// 	if(current1->next == NULL)
-						// 		break;
+							current = unionFirst;
+							for(int i=0; i<blockersPolygons.size(); i++) {
+								current->polygon = blockersPolygons[i];
+								current->marker = true;
 								
-						// 	DLL *current2 = current1->next;
-						// 	while(true) {
-						// 		if(current1->polygon.size() != 0 && current2->polygon.size() != 0) {
-						// 			PolyClip::Polygon c1(current1->polygon);
-						// 			PolyClip::Polygon c2(current2->polygon);
+								DLL *newElem = new DLL();
+								newElem->prev = current;
+								
+								current->next = newElem;
+								current = newElem;
+							}
+							unionLast = current;
 
-						// 			/* GH Phase 1 */
-						// 			PolyClip::PloygonOpration::DetectIntersection(c1, c2);
+							/* Loop over all blocker polygons and take set difference with current light source polygon */
+							int numElems = 1;
+							firstElem = new DLL();
+							lastElem = firstElem;
+							firstElem->polygon = currentLightVertices;
+							firstElem->marker = false;
 
-						// 			/* GH Phase 2, 3 */
-						// 			int indicator = -1;
-						// 			bool didIntersect = false;
-						// 			std::vector<std::vector<PolyClip::Point2d>> possibleRes;
-						// 			PolyClip::PloygonOpration::Mark(c1, c2, possibleRes, PolyClip::MarkUnion, &didIntersect, &indicator);
+							DLL *currentUnion = unionFirst;
+							while(true) {
+								if(currentUnion->polygon.size() != 0) {
+									DLL *current = firstElem;
+									while(true) {
 
-						// 			if(!didIntersect) {
-						// 				if(indicator == 1) {
-						// 					if(current1->prev != NULL)
-						// 						current1->prev->next = current1->next;
-												
-						// 					if(current1->next != NULL)
-						// 						current1->next->prev = current1->prev;
+										if(current->polygon.size() != 0 && !current->marker) {
+											PolyClip::Polygon lightPolygon(current->polygon);
+											PolyClip::Polygon blockerPolygon(currentUnion->polygon);
 
-						// 					current1->polygon.clear();
-						// 					break;
-						// 				}
-						// 				else if(indicator == 2) {
-						// 					if(current2->prev != NULL)
-						// 						current2->prev->next = current2->next;
-												
-						// 					if(current2->next != NULL)
-						// 						current2->next->prev = current2->prev;
+											/* GH Phase 1 */
+											PolyClip::PloygonOpration::DetectIntersection(lightPolygon, blockerPolygon);
 
-						// 					current2->polygon.clear();
-						// 				}
-						// 			}
-						// 			else if(didIntersect) {
-						// 				std::vector<std::vector<PolyClip::Point2d>> diffRes = PolyClip::PloygonOpration::ExtractUnionResults(c1);
-										
-						// 				// Remove last point ; because it is the same as the first point
-						// 				// TODO: Does union having > 1 elements mean that the rest need to be subtracted?
-						// 				diffRes[0].pop_back();
-						// 				current1->polygon = diffRes[0];
+											/* GH Phase 2, 3 */
+											int indicator = -1;
+											bool didIntersect = false;
+											std::vector<std::vector<PolyClip::Point2d>> possibleRes;
+											PolyClip::PloygonOpration::Mark(lightPolygon, blockerPolygon, possibleRes, PolyClip::MarkDifferentiate, &didIntersect, &indicator);
 
-						// 				if(current2->prev != NULL)
-						// 					current2->prev->next = current2->next;
-											
-						// 				if(current2->next != NULL)
-						// 					current2->next->prev = current2->prev;
+											if(!didIntersect) {
+												if(indicator == 1) {
+													if(current->prev != NULL)
+														current->prev->next = current->next;
+													
+													if(current->next != NULL)
+														current->next->prev = current->prev;
+													
+													current->polygon.clear();
 
-						// 				current2->polygon.clear();
-						// 			}
-						// 		}
+													numElems -= 1;
+												}
+												else if(indicator == 2) {
+													DLL *newElem = new DLL();
+													newElem->next = firstElem;
+													newElem->polygon = currentUnion->polygon;
+													newElem->marker = true;
 
-						// 		if(current2->next == NULL)
-						// 			break;
-						// 		else
-						// 			current2 = current2->next;
-						// 	}
+													firstElem->prev = newElem;
+													firstElem = newElem;
 
-						// 	current1 = current1->next;
-						// }
+													numElems += 1;
+												}
+											}
+											else if(didIntersect) {
+												std::vector<std::vector<PolyClip::Point2d>> diffRes = PolyClip::PloygonOpration::ExtractDifferentiateResults(lightPolygon);
 
-						/* Loop over all blocker polygons and take set difference with current light source polygon */
-						int numElems = 1;
-						DLL *firstElem = new DLL();
-						DLL *lastElem = firstElem;
-						firstElem->polygon = currentLightVertices;
-						firstElem->marker = false;
-
-						DLL *currentUnion = unionFirst;
-						while(true) {
-							if(currentUnion->polygon.size() != 0) {
-								DLL *current = firstElem;
-								while(true) {
-
-									if(current->polygon.size() != 0 && !current->marker) {
-										PolyClip::Polygon lightPolygon(current->polygon);
-										PolyClip::Polygon blockerPolygon(currentUnion->polygon);
-
-										/* GH Phase 1 */
-										PolyClip::PloygonOpration::DetectIntersection(lightPolygon, blockerPolygon);
-
-										/* GH Phase 2, 3 */
-										int indicator = -1;
-										bool didIntersect = false;
-										std::vector<std::vector<PolyClip::Point2d>> possibleRes;
-										PolyClip::PloygonOpration::Mark(lightPolygon, blockerPolygon, possibleRes, PolyClip::MarkDifferentiate, &didIntersect, &indicator);
-
-										if(!didIntersect) {
-											if(indicator == 1) {
 												if(current->prev != NULL)
 													current->prev->next = current->next;
-												
+													
 												if(current->next != NULL)
 													current->next->prev = current->prev;
 												
 												current->polygon.clear();
-
 												numElems -= 1;
-											}
-											else if(indicator == 2) {
-												DLL *newElem = new DLL();
-												newElem->next = firstElem;
-												newElem->polygon = currentUnion->polygon;
-												newElem->marker = true;
+												
+												int pidx = 0;
+												for(auto polyVerts : diffRes) {
+													// polyVerts.pop_back();
+													
+													DLL *newElem = new DLL();
+													newElem->next = firstElem;
+													newElem->polygon = polyVerts;
+													newElem->marker = false;
 
-												firstElem->prev = newElem;
-												firstElem = newElem;
+													firstElem->prev = newElem;
+													firstElem = newElem;
 
-												numElems += 1;
+													numElems += 1;
+													pidx++;
+												}
 											}
 										}
-										else if(didIntersect) {
-											// std::vector<std::vector<PolyClip::Point2d>> diffRes;
-											std::vector<std::vector<PolyClip::Point2d>> diffRes = PolyClip::PloygonOpration::ExtractDifferentiateResults(lightPolygon);
 
-											if(current->prev != NULL)
-												current->prev->next = current->next;
-												
-											if(current->next != NULL)
-												current->next->prev = current->prev;
-											
-											current->polygon.clear();
-											numElems -= 1;
-											
-											int pidx = 0;
-											for(auto polyVerts : diffRes) {
-												polyVerts.pop_back();
-												
-												DLL *newElem = new DLL();
-												newElem->next = firstElem;
-												newElem->polygon = polyVerts;
-												newElem->marker = false;
-
-												firstElem->prev = newElem;
-												firstElem = newElem;
-
-												numElems += 1;
-												pidx++;
-											}
-										}
+										if(current->next == NULL)
+											break;
+										else
+											current = current->next;
 									}
-
-									if(current->next == NULL)
-										break;
-									else
-										current = current->next;
 								}
-							}
 
-							if(currentUnion->next == NULL)
-								break;
-							else
-								currentUnion = currentUnion->next;
+								if(currentUnion->next == NULL)
+									break;
+								else
+									currentUnion = currentUnion->next;
+							}
 						}
 
-						current = firstElem;
+						// // LOG
+						// current = firstElem;
+						// int numClipped = 0;
+						// while(true) {
+						// 	auto polygon = current->polygon;
 
-						// LOG
-						// std::vector<std::pair<Vector3f, Vector3f>> temp1, temp2;
-						// LOG
+						// 	if(polygon.size() != 0)
+						// 		if(!current->marker)
+						// 			numClipped++;
+							
+						// 	if(current->next == NULL)
+						// 		break;
+						// 	else
+						// 		current = current->next;
+						// }
+						// logFile << std::to_string(numClipped) << ",";
+						// // ENDLOG
+
+						current = firstElem;
 
 						while(true) {
 							std::vector<std::pair<Vector3f, Vector3f>> intersectionEdges;
@@ -1084,14 +979,28 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 									intersectionEdges.push_back(std::pair<Vector3f, Vector3f>(v1, v2));
 								}
 
+								float area = Cross(intersectionEdges[1].first-intersectionEdges[0].first, intersectionEdges[2].first-intersectionEdges[0].first).Length();
+								// // LOG
+								// if(!current->marker) {
+								// 	logFile << std::to_string(intersectionEdges.size()) << ",";
+
+								// 	for(auto item : intersectionEdges) {
+								// 		auto temp = Normalize(item.first);
+								// 		logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+								// 	}
+
+								// 	for(auto item : intersectionEdges) {
+								// 		logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+								// 	}
+								// }
+								// // ENDLOG
+
 								this->unprojectXY(isect, intersectionEdges, projectionVector);
 								this->projectToUnitSphere(intersectionEdges);
-								// temp1 = intersectionEdges; // LOG
 								this->applyLTC(isect, intersectionEdges, alpha, &amplitude);
 								this->projectToUnitSphere(intersectionEdges);
 								this->clipToHorizon(isect, intersectionEdges);
 								this->projectToUnitSphere(intersectionEdges);
-								// temp2 = intersectionEdges; // LOG
 
 								if(current->marker)
 									currentIrradiance = currentIrradiance - ( lightsEmit[lidx] * amplitude * integrateEdges(intersectionEdges) );
@@ -1104,30 +1013,30 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 							else
 								current = current->next;
 						}
-
-						// LOG
-						// ghClip.push_back(temp1);
-						// ghClipLtc.push_back(temp2);
-						// LOG
 					}
 					else {
 						std::vector<std::pair<Vector3f, Vector3f>> currentLight_(currentLight);
 
+						// // LOG
+						// logFile << "1,";
+						// logFile << std::to_string(currentLight_.size()) << ",";
+						// for(auto item : currentLight_) {
+						// 	auto temp = Normalize(item.first);
+						// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+						// }
+						// for(auto item : currentLight_) {
+						// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+						// }
+						// // ENDLOG
+
 						this->unprojectXY(isect, currentLight_, projectionVector);
 						this->projectToUnitSphere(currentLight_);
-						// std::vector<std::pair<Vector3f, Vector3f>> temp1(currentLight_); // LOG
 						this->applyLTC(isect, currentLight_, alpha, &amplitude);
 						this->projectToUnitSphere(currentLight_);
 						this->clipToHorizon(isect, currentLight_);
 						this->projectToUnitSphere(currentLight_);
-						// std::vector<std::pair<Vector3f, Vector3f>> temp2(currentLight_); // LOG
 
 						currentIrradiance += lightsEmit[lidx] * amplitude * integrateEdges(currentLight_);
-
-						// LOG
-						// ghClip.push_back(temp1);
-						// ghClipLtc.push_back(temp2);
-						// LOG
 					}
 				}
 
@@ -1138,70 +1047,10 @@ Spectrum LTCShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
 
 				lidx++;
 			}
-
-			// LOG
-			// logFile << std::to_string(nonClipped.size()) << std::endl;
-			// for(auto item : nonClipped) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-
-			// logFile << std::to_string(clipped.size()) << std::endl;
-			// for(auto item : clipped) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-
-			// logFile << std::to_string(occNonClipped.size()) << std::endl;
-			// for(auto item : occNonClipped) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-
-			// logFile << std::to_string(occClipped.size()) << std::endl;
-			// for(auto item : occClipped) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-
-			// logFile << std::to_string(ghClip.size()) << std::endl;
-			// for(auto item : ghClip) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-
-			// logFile << std::to_string(ghClipLtc.size()) << std::endl;
-			// for(auto item : ghClipLtc) {
-			// 	logFile << std::to_string(item.size()) << std::endl;
-
-			// 	for(auto edge : item) {
-			// 		logFile << SphericalTheta(edge.first) << " " << SphericalPhi(edge.first) << " ";
-			// 	}
-			// 	logFile << std::endl;
-			// }
-			// LOG
 		}
 	}
+
+	// logFile << "-1" << std::endl;
 
 	return L;
 }

@@ -316,6 +316,8 @@ Spectrum LTCSilhouette::Li(const RayDifferential &ray, const Scene &scene,
 		Spectrum lightRadiance = isect.Le(-ray.d);
 		isect.ComputeScatteringFunctions(ray, arena, true);
 
+		auto shadingPoint = Vector3f(isect.p) + 1e-3 * Vector3f(isect.n);
+
 		if(lightRadiance.y() != 0.0f || !isect.bsdf) {
 			L += lightRadiance;
 		}
@@ -326,10 +328,10 @@ Spectrum LTCSilhouette::Li(const RayDifferential &ray, const Scene &scene,
 			for (size_t j = 0; j < numLights; ++j) {
 				const std::shared_ptr<TriangleMesh> &lightMesh = scene.areaLightMeshes[j];
 				Vector3f avgNormal(0.f, 0.f, 0.f);
-				auto silhouetteEdges = lightMesh->computeSilhouetteEdges(isect.p, avgNormal);
+				auto silhouetteEdges = lightMesh->computeSilhouetteEdges(shadingPoint, avgNormal);
 
 				lightsEdges.push_back(silhouetteEdges);
-				lightsCg.push_back(scene.areaLightMeshes[j]->cg - Vector3f(isect.p));
+				lightsCg.push_back(scene.areaLightMeshes[j]->cg - shadingPoint);
 			}
 
 			float alpha = 0.f;

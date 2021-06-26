@@ -407,7 +407,7 @@ std::vector<std::vector<PolyClip::Point2d>> PolyClip::PloygonOpration::ExtractDi
 			current->processd = true;
 
 			idx++;
-		} while (current != st && idx <= clip_poly.vertexNum_);
+		} while (current != st && idx <= clip_poly.vertexNum_*10);
 
 		results.push_back(poly);
 	}
@@ -422,6 +422,9 @@ bool PolyClip::PloygonOpration::LineSegmentIntersection(
 	float& alphaP, float& alphaQ)
 {
 	const float perturbation = static_cast<float>(1.001);
+	// float perturbation = rand()/float(RAND_MAX/2.0) - 1;
+	// perturbation = 1.f + perturbation * 1e-3;
+	// std::cout << std::to_string(perturbation) << std::endl;
 
 	Point2d vec_p1_q1(p1.x_ - q1.x_, p1.y_ - q1.y_);
 	Point2d vec_p2_q1(p2.x_ - q1.x_, p2.y_ - q1.y_);

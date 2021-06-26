@@ -9,8 +9,8 @@ import cv2
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--img_1', type=str, default='')
-    parser.add_argument('--img_2', type=str, default='')
+    parser.add_argument('--img_1', type=str, default='source image')
+    parser.add_argument('--img_2', type=str, default='target image')
 
     args = parser.parse_args()
 
