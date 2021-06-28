@@ -1,132 +1,66 @@
-pbrt, Version 3
+Fast Analytic Soft Shadows from Area Lights, EGSR 2021
 ===============
+<b>Aakash KT <sup><a href="http://cvit.iiit.ac.in/">[1]</a></sup></b>, Parikshit Sakurikar <sup><a href="https://dreamvu.com/">[1, 2]</a></sup>, P. J. Narayanan <sup><a href="http://cvit.iiit.ac.in/">[1]</a></sup>
+<br>
+<span>
+	<a target="_blank" href="neural-renderer-material-visualization.html">[Project page]</a>
+    <a target="_blank" href="https://drive.google.com/file/d/15Y0nYnf2imHePU7PNrVXZFPzCGnScQqA/view?usp=sharing">[Final Version]</a>
+    <a target="_blank" href="#">[Publisher's Version]</a>
+    <a target="_blank" href="#">[bibtex]</a>
+</span>
+<br><br>
+<b>Abstract</b>
+<p>
+In this paper, we present the first method to analytically compute shading and soft shadows for physically based BRDFs from
+arbitrary area lights. We observe that for a given shading point, shadowed radiance can be computed by analytically integrating over the visible portion of the light source using Linearly Transformed Cosines (LTCs). We present a structured approach to project, re-order and horizon-clip spherical polygons of arbitrary lights and occluders. The visible portion is then computed by multiple repetitive set difference operations. Our method produces noise-free shading and soft-shadows and outperforms ray-tracing within the same compute budget. We further optimize our algorithm for convex light and occluder meshes by projecting the silhouette edges as viewed from the shading point to a spherical polygon, and performing one set difference operation thereby achieving a speedup of more than 2×. We analyze the run-time performance of our method and show rendering results on several scenes with multiple light sources and complex occluders. We demonstrate superior results compared to prior work that uses analytic shading with stochastic shadow computation for area lights.
+</p>
 
-[![Build Status](https://travis-ci.org/mmp/pbrt-v3.svg?branch=master)](https://travis-ci.org/mmp/pbrt-v3)
-[![Build status](https://ci.appveyor.com/api/projects/status/mlm9g91ejxlcn67s/branch/master?svg=true)](https://ci.appveyor.com/project/mmp/pbrt-v3/branch/master)
+Code
+---------
+This code is written on top of PBRT-v3. Our analytic method is implemented as integrator plugins. The main code resides in the following files:<br>
+<ul>
+<li><b>src/integrators/ltc.cpp:</b> LTC implementation</li>
+<li><b>src/integrators/ratio.cpp:</b> Ratio Estimator (See <a href="https://research.nvidia.com/publication/2018-05_Combining-Analytic-Direct">here</a>.)</li>
+<li><b>src/integrators/ltc+shadow.cpp:</b> Our method (Per-triangle)</li>
+<li><b>src/integrators/ltc+silhouette+shadow.cpp:</b> Our method (Silhouette edges)</li>
+<li><b>src/integrators/polygon*.cpp:</b> Set difference using Greiner-Hormann, adapted from <a href="https://github.com/Lecanyu/PolygonClipping">here</a></li>
+</ul>
 
-This repository holds the source code to the version of pbrt that is
-described in the third edition of *Physically Based Rendering: From
-Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel
-Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
-before, the code is available under the BSD license.
+No extra dependencies are required, hence you can build this code following the original instructions from <a href="https://github.com/mmp/pbrt-v3">PBRT-v3</a>.
+<br>
+You can find scenes used in the paper <a href="https://iiitaphyd-my.sharepoint.com/:f:/g/personal/aakash_kt_research_iiit_ac_in/Emm-eVr3AodEpjMEr8XPMCIBdxOVABKX2JdhbWDpRwpGRA?e=zlxVTd">here</a>.
 
-The [pbrt website](http://pbrt.org) has general information about both the
-*Physically Based Rendering* book as well as many other resources for pbrt.
-As of October 2018, the full [text of the book](http://www.pbr-book.org) is
-now available online, for free.
-
-Example scenes
---------------
-
-Over 8GB of example scenes are available for download. (Many are new and
-weren't available with previous versions of pbrt.)  See the [pbrt-v3 scenes
-page](http://pbrt.org/scenes-v3.html) on the pbrt website for information
-about how to download them.
-
-After downloading them, see the `README.md.html` file in the scene
-distribution for more information about the scenes and preview images.
-
-Additional resources
---------------------
-
-* There is a [pbrt Google
-  Groups](https://groups.google.com/forum/#!forum/pbrt) mailing list that can
-  be a helpful resource.
-* Please see the [User's Guide](http://pbrt.org/users-guide.html) for more
-  information about how to check out and build the system as well as various
-  additional information about working with pbrt.
-* Should you find a bug in pbrt, please report it in the [bug
-  tracker](https://github.com/mmp/pbrt-v3/issues).
-* Please report any errors you find in the *Physically Based Rendering*
-  book to authors@pbrt.org.
-
-Note: we tend to let bug reports and book errata emails pile up for a few
-months for processing them in batches. Don't think we don't appreciate
-them. :-)
-
-Building pbrt
--------------
-
-To check out pbrt together with all dependencies, be sure to use the
-`--recursive` flag when cloning the repository, i.e.
-```bash
-$ git clone --recursive https://github.com/mmp/pbrt-v3/
+Rendering & Visualizing
+---
+To render using our silhouette edge method, first change the sampler and integrator in your scene file like so:
 ```
-If you accidentally already cloned pbrt without this flag (or to update an
-pbrt source tree after a new submodule has been added, run the following
-command to also fetch the dependencies:
-```bash
-$ git submodule update --init --recursive
+Sampler "stratified" "integer xsamples" 1 "integer ysamples" 1 "bool jitter" "false"
+Integrator "ltc+silhouette+shadow"
 ```
+The various integrator names correspond exactly to the file names given above. Now run PBRT as:
+```
+./pbrt scene.pbrt -outfile render.png
+```
+<br>
+To visualize spherical polygons and difference polygons, first uncomment all lines between "// // LOG" and "// // ENDLOG" in the file of the integrator of your choice and rebuild PBRT. Then run PBRT with one thread:
+```
+./pbrt scene.pbrt -outfile render.png --nthreads 1
+```
+This will save a "pixelOutput.txt" in the build directory. To visualize the polygons, use the "visualize.py" script like so:
+```
+python visualize.py --image_file render.png --pixel_file pixelOutput.txt
+```
+This will give you an interactive polygon visualizer, where you can click on any point in the image and all polygons (blue for light, red for occluder) will be visualized in the middle and difference polygons will be visualized in the right. Press "B" to toggle between hiding and showing occluders, and press "H" to toggle between a lat-long (spherical) projection and a 2D (planar) projection.
+<br>
+To render with the ratio estimator, prepare three files corresponding to Sn, Un, and U (see provided scenes, scene_un.pbrt, scene_sn.pbrt, scene_ltc.pbrt respectively). Render with ratio estimator like so:
+```
+python analytic_stochastic.py --scene_dir /path/to/scene/files
+```
+This will render and save individual three outputs and the composite output, using bilateral filter for denoising. All timings will also be reported.
 
-pbrt uses [cmake](http://www.cmake.org/) for its build system.  On Linux
-and OS X, cmake is available via most package management systems.  To get
-cmake for Windows, or to build it from source, see the [cmake downloads
-page](http://www.cmake.org/download/).  Once you have cmake, the next step
-depends on your operating system.
+Acknowledgements
+------------
+We thank the reviewers for their valuable feedback and insights. This research was partially funded by the "Kolhi Fellowship" of KCIS. <br>
+We also thank Matt Pharr, Wenzel Jakob, and Greg Humphreys for their amazing book <i>Physically Based Rendering: From Theory to Implementation</i>.
 
-### Makefile builds (Linux, other Unixes, and Mac) ###
 
-Create a new directory for the build, change to that directory, and run
-`cmake [path to pbrt-v3]`. A Makefile will be created in the current
-directory.  Next, run `make` to build pbrt, the obj2pbrt and imgtool
-utilities, and an executable that runs pbrt's unit tests.  Depending on the
-number of cores in your system, you will probably want to supply make with
-the `-j` parameter to specify the number of compilation jobs to run in
-parallel (e.g. `make -j8`).
-
-By default, the makefiles that are created that will compile an optimized
-release build of pbrt. These builds give the highest performance when
-rendering, but many runtime checks are disabled in these builds and
-optimized builds are generally difficult to trace in a debugger.
-
-To build a debug version of pbrt, set the `CMAKE_BUILD_TYPE` flag to
-`Debug` when you run cmake to create build files to make a debug build.  To
-do so, provide cmake with the argument `-DCMAKE_BUILD_TYPE=Debug` and build
-pbrt using the resulting makefiles. (You may want to keep two build
-directories, one for release builds and one for debug builds, so that you
-don't need to switch back and forth.)
-
-Debug versions of the system run much more slowly than release
-builds. Therefore, in order to avoid surprisingly slow renders when
-debugging support isn't desired, debug versions of pbrt print a banner
-message indicating that they were built for debugging at startup time.
-
-### Xcode ###
-
-To make an Xcode project on OS X, run `cmake -G Xcode [path to pbrt-v3]`.
-A `PBRT-V3.xcodeproj` project file that can be opened in Xcode.  Note that
-the default build settings have an optimization level of "None"; you'll
-almost certainly want to choose "Faster" or "Fastest".
-
-### MSVC on Windows ###
-
-On Windows, first point the cmake GUI at the directory with pbrt's source
-code.  Create a separate directory to hold the result of the build
-(potentially just a directory named "build" inside the pbrt-v3 directory)
-and set that for "Where to build the binaries" in the GUI.
-
-Next, click "Configure".  Note that you will want to choose the "Win64"
-generator for your MSVC installation unless you have a clear reason to need
-a 32-bit build of pbrt.  Once cmake has finished the configuration step,
-click "Generate"; when that's done, there will be a "PBRT-V3.sln" file in
-the build directory you specified. Open that up in MSVC and you're ready to
-go.
-
-### Build Configurations ###
-
-There are two configuration settings that must be set when configuring the
-build. The first controls whether pbrt uses 32-bit or 64-bit values for
-floating-point computation, and the second controls whether tristimulus RGB
-values or sampled spectral values are used for rendering.  (Both of these
-aren't amenable to being chosen at runtime, but must be determined at
-compile time for efficiency).  The cmake configuration variables
-`PBRT_FLOAT_AS_DOUBLE` and `PBRT_SAMPLED_SPECTRUM` configure them,
-respectively.
-
-If you're using a GUI version of cmake, those settings should be available
-in the list of configuration variables; set them as desired before choosing
-'Generate'.
-
-With command-line cmake, their values can be specified when you cmake via
-`-DPBRT_FLOAT_AS_DOUBLE=1`, for example.

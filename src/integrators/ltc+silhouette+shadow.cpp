@@ -611,9 +611,9 @@ std::vector<Vector3f> LTCSilhouetteShadow::computeFarPlaneCorners(SurfaceInterac
 Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, std::ofstream &logFile, int depth) const {
 
-	// LOG
-	logFile << std::to_string(sampler.currentPixel.x) << "," << std::to_string(sampler.currentPixel.y) << ",";
-	// ENDLOG
+	// // LOG
+	// logFile << std::to_string(sampler.currentPixel.x) << "," << std::to_string(sampler.currentPixel.y) << ",";
+	// // ENDLOG
 	
 	ProfilePhase p(Prof::SamplerIntegratorLi);
 	Spectrum L(0.0);
@@ -622,10 +622,10 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 	bool foundIntersection = scene.Intersect(ray, &isect);
 	
 	if(!foundIntersection) {
-		// LOG		
-		logFile << "0,";
-		logFile << "0,";
-		// ENDLOG
+		// // LOG		
+		// logFile << "0,";
+		// logFile << "0,";
+		// // ENDLOG
 	}
 	else if(foundIntersection) {
 		Spectrum lightRadiance = isect.Le(-ray.d);
@@ -637,10 +637,10 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 		if(lightRadiance.y() != 0.0f || isectMesh->isLight) {
 			L += lightRadiance;
 
-			// LOG		
-			logFile << "0,";
-			logFile << "0,";
-			// ENDLOG
+			// // LOG		
+			// logFile << "0,";
+			// logFile << "0,";
+			// // ENDLOG
 		}
 		else {
 			/* Initialize */
@@ -732,9 +732,9 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 				}
 			}
 
-			// LOG
-			logFile << std::to_string(lightsEdges.size()) << ",";
-			// ENDLOG
+			// // LOG
+			// logFile << std::to_string(lightsEdges.size()) << ",";
+			// // ENDLOG
 
 			int lidx = 0;
 			for(auto light : lightsEdges) {
@@ -765,38 +765,38 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 					}
 				}
 
-				// LOG: Horizon clipped edges of light (First plot spherical co-ords and then projected edges)
-				logFile << std::to_string(light.size()) << ",";
+				// // LOG: Horizon clipped edges of light (First plot spherical co-ords and then projected edges)
+				// logFile << std::to_string(light.size()) << ",";
 
-				for(auto item : lightsEdgesSph[lidx]) {
-					auto temp = Normalize(item.first);
-					logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
-				}
+				// for(auto item : lightsEdgesSph[lidx]) {
+				// 	auto temp = Normalize(item.first);
+				// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+				// }
 
-				for(auto item : light) {
-					logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
-				}
-				// ENDLOG
+				// for(auto item : light) {
+				// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+				// }
+				// // ENDLOG
 
-				// LOG: Horizon clipped edges of occluders
-				logFile << std::to_string(blockersEdges.size()) << ",";
-				int counter = 0;
-				for(auto blocker : blockersEdges) {
-					// Fist plot spherical co-ords and then projected edges
-					logFile << std::to_string(blocker.size()) << ",";
+				// // LOG: Horizon clipped edges of occluders
+				// logFile << std::to_string(blockersEdges.size()) << ",";
+				// int counter = 0;
+				// for(auto blocker : blockersEdges) {
+				// 	// Fist plot spherical co-ords and then projected edges
+				// 	logFile << std::to_string(blocker.size()) << ",";
 
-					for(auto vertex : blockersEdgesSph[counter]) {
-						auto temp = Normalize(vertex.first);
-						logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
-					}
+				// 	for(auto vertex : blockersEdgesSph[counter]) {
+				// 		auto temp = Normalize(vertex.first);
+				// 		logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+				// 	}
 
-					for(auto vertex : blocker) {
-						logFile << std::to_string(vertex.first.x) << "," << std::to_string(vertex.first.y) << "," << std::to_string(vertex.first.z) << ",";
-					}
+				// 	for(auto vertex : blocker) {
+				// 		logFile << std::to_string(vertex.first.x) << "," << std::to_string(vertex.first.y) << "," << std::to_string(vertex.first.z) << ",";
+				// 	}
 
-					counter++;
-				}
-				// ENDLOG
+				// 	counter++;
+				// }
+				// // ENDLOG
 
 				Spectrum currentIrradiance(0.f);
 
@@ -807,17 +807,17 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 					/* Compute unoccluded radiance */
 					std::vector<std::pair<Vector3f, Vector3f>> currentLight_(currentLight);
 
-					// LOG
-					logFile << "1,";
-					logFile << std::to_string(currentLight_.size()) << ",";
-					for(auto vertex : currentLight_) {
-						auto temp = Normalize(vertex.first);
-						logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
-					}
-					for(auto item : currentLight_) {
-						logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
-					}
-					// ENDLOG
+					// // LOG
+					// logFile << "1,";
+					// logFile << std::to_string(currentLight_.size()) << ",";
+					// for(auto vertex : currentLight_) {
+					// 	auto temp = Normalize(vertex.first);
+					// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+					// }
+					// for(auto item : currentLight_) {
+					// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+					// }
+					// // ENDLOG
 					
 					{
 						ProfilePhase finalLTC(Prof::LTCIntegration);
@@ -966,23 +966,23 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 							}
 						}
 
-						// LOG
-						current = firstElem;
-						int numClipped = 0;
-						while(true) {
-							auto polygon = current->polygon;
+						// // LOG
+						// current = firstElem;
+						// int numClipped = 0;
+						// while(true) {
+						// 	auto polygon = current->polygon;
 
-							if(polygon.size() != 0)
-								if(!current->marker)
-									numClipped++;
+						// 	if(polygon.size() != 0)
+						// 		if(!current->marker)
+						// 			numClipped++;
 							
-							if(current->next == NULL)
-								break;
-							else
-								current = current->next;
-						}
-						logFile << std::to_string(numClipped) << ",";
-						// ENDLOG
+						// 	if(current->next == NULL)
+						// 		break;
+						// 	else
+						// 		current = current->next;
+						// }
+						// logFile << std::to_string(numClipped) << ",";
+						// // ENDLOG
 
 						current = firstElem;
 						
@@ -1002,20 +1002,20 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 										intersectionEdges.push_back(std::pair<Vector3f, Vector3f>(v1, v2));
 									}
 
-									// LOG
-									if(!current->marker) {
-										logFile << std::to_string(intersectionEdges.size()) << ",";
+									// // LOG
+									// if(!current->marker) {
+									// 	logFile << std::to_string(intersectionEdges.size()) << ",";
 
-										for(auto item : intersectionEdges) {
-											auto temp = Normalize(item.first);
-											logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
-										}
+									// 	for(auto item : intersectionEdges) {
+									// 		auto temp = Normalize(item.first);
+									// 		logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+									// 	}
 
-										for(auto item : intersectionEdges) {
-											logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
-										}
-									}
-									// ENDLOG
+									// 	for(auto item : intersectionEdges) {
+									// 		logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+									// 	}
+									// }
+									// // ENDLOG
 
 									this->unprojectXY(isect, intersectionEdges, projectionVector);
 									this->projectToUnitSphere(intersectionEdges);
@@ -1040,17 +1040,17 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 					else {
 						std::vector<std::pair<Vector3f, Vector3f>> currentLight_(currentLight);
 
-						// LOG
-						logFile << "1,";
-						logFile << std::to_string(currentLight_.size()) << ",";
-						for(auto item : currentLight_) {
-							auto temp = Normalize(item.first);
-							logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
-						}
-						for(auto item : currentLight_) {
-							logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
-						}
-						// ENDLOG
+						// // LOG
+						// logFile << "1,";
+						// logFile << std::to_string(currentLight_.size()) << ",";
+						// for(auto item : currentLight_) {
+						// 	auto temp = Normalize(item.first);
+						// 	logFile << std::to_string(SphericalPhi(temp)) << "," << std::to_string(SphericalTheta(temp)) << ",";
+						// }
+						// for(auto item : currentLight_) {
+						// 	logFile << std::to_string(item.first.x) << "," << std::to_string(item.first.y) << "," << std::to_string(item.first.z) << ",";
+						// }
+						// // ENDLOG
 						
 						{
 							ProfilePhase finalLTC(Prof::LTCIntegration);
@@ -1077,7 +1077,7 @@ Spectrum LTCSilhouetteShadow::LiWrite(const RayDifferential &ray, const Scene &s
 		}
 	}
 
-	logFile << "-1" << std::endl;
+	// logFile << "-1" << std::endl;
 
 	return L;
 }
