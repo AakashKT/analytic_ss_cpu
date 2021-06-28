@@ -41,8 +41,8 @@ The various integrator names correspond exactly to the file names given above. N
 ```
 ./pbrt scene.pbrt -outfile render.png
 ```
-<br>
-To visualize spherical polygons and difference polygons, first uncomment all lines between "// // LOG" and "// // ENDLOG" in the file of the integrator of your choice and rebuild PBRT. Then run PBRT with one thread:
+
+To visualize spherical polygons and difference polygons, first uncomment all lines between "LOG" and "ENDLOG" in the file of the integrator of your choice and rebuild PBRT. Then run PBRT with one thread:
 ```
 ./pbrt scene.pbrt -outfile render.png --nthreads 1
 ```
@@ -51,7 +51,7 @@ This will save a "pixelOutput.txt" in the build directory. To visualize the poly
 python visualize.py --image_file render.png --pixel_file pixelOutput.txt
 ```
 This will give you an interactive polygon visualizer, where you can click on any point in the image and all polygons (blue for light, red for occluder) will be visualized in the middle and difference polygons will be visualized in the right. Press "B" to toggle between hiding and showing occluders, and press "H" to toggle between a lat-long (spherical) projection and a 2D (planar) projection.
-<br>
+
 To render with the ratio estimator, prepare three files corresponding to Sn, Un, and U (see provided scenes, scene_un.pbrt, scene_sn.pbrt, scene_ltc.pbrt respectively). Render with ratio estimator like so:
 ```
 python analytic_stochastic.py --scene_dir /path/to/scene/files
