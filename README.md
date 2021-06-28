@@ -3,7 +3,7 @@ Fast Analytic Soft Shadows from Area Lights, EGSR 2021
 <b>Aakash KT <sup><a href="http://cvit.iiit.ac.in/">[1]</a></sup></b>, Parikshit Sakurikar <sup><a href="https://dreamvu.com/">[1, 2]</a></sup>, P. J. Narayanan <sup><a href="http://cvit.iiit.ac.in/">[1]</a></sup>
 <br>
 <span>
-    <a target="_blank" href="https://drive.google.com/file/d/15Y0nYnf2imHePU7PNrVXZFPzCGnScQqA/view?usp=sharing">[Final Version]</a>
+    <a target="_blank" href="https://drive.google.com/file/d/1Ssgnxu-yjYeDAasBKEuaM6i9q6KcK5g1/view">[Final Version]</a>
     <a target="_blank" href="#">[Publisher's Version]</a>
     <a target="_blank" href="#">[bibtex]</a>
 </span>
