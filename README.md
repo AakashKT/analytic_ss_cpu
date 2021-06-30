@@ -59,7 +59,7 @@ This will render and save individual three outputs and the composite output, usi
 
 Acknowledgements
 ------------
-We thank the reviewers for their valuable feedback and insights. This research was partially funded by the "Kolhi Fellowship" of KCIS. <br>
+We thank the reviewers for their valuable feedback and insights. This research was partially funded by the "Kohli Fellowship" of KCIS. <br>
 We also thank Matt Pharr, Wenzel Jakob, and Greg Humphreys for their amazing book <i>Physically Based Rendering: From Theory to Implementation</i>.
 
 
