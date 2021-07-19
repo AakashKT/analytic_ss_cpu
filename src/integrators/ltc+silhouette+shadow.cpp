@@ -406,8 +406,8 @@ Float LTCSilhouetteShadow::projectXY(SurfaceInteraction &si, std::vector<std::pa
 			edges[i].first.z += 0.f;	
 		edges[i].first.x /= edges[i].first.z;
 		edges[i].first.y /= edges[i].first.z;
-		// edges[i].first.x *= ( randomScale * 1e-3 + 1.0);
-		// edges[i].first.y *= ( randomScale * 1e-3 + 1.0);
+		edges[i].first.x *= ( randomScale * 1e-3 + 1.0);
+		edges[i].first.y *= ( randomScale * 1e-3 + 1.0);
 
 		if(deltaCorrection)
 			edges[i].second.z += std::abs(delta) + 1.f;
@@ -415,8 +415,8 @@ Float LTCSilhouetteShadow::projectXY(SurfaceInteraction &si, std::vector<std::pa
 			edges[i].second.z += 0.f;
 		edges[i].second.x /= edges[i].second.z;
 		edges[i].second.y /= edges[i].second.z;
-		// edges[i].second.x *= ( randomScale * 1e-3 + 1.0);
-		// edges[i].second.y *= ( randomScale * 1e-3 + 1.0);
+		edges[i].second.x *= ( randomScale * 1e-3 + 1.0);
+		edges[i].second.y *= ( randomScale * 1e-3 + 1.0);
 	}
 
 	return delta;
